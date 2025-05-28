@@ -10,7 +10,7 @@ import roomescape.admin.reservation.presentation.dto.AdminWaitingReservationResp
 import roomescape.member.application.MemberService;
 import roomescape.member.domain.Member;
 import roomescape.reservation.domain.Reservation;
-import roomescape.reservation.domain.ReservationCreate;
+import roomescape.reservation.domain.ReservationDeatils;
 import roomescape.reservation.presentation.dto.ReservationRequest;
 import roomescape.reservation.presentation.dto.ReservationResponse;
 import roomescape.reservation.presentation.dto.UserReservationsResponse;
@@ -42,7 +42,7 @@ public class ReservationService {
 
     @Transactional
     public ReservationResponse createReservation(final ReservationRequest request, final Long memberId) {
-        return createAndSaveReservationBy(ReservationCreate.forNormalReservation(
+        return createAndSaveReservationBy(ReservationDeatils.forNormalReservation(
                         memberId,
                         request.getThemeId(),
                         request.getDate(),
@@ -52,7 +52,7 @@ public class ReservationService {
     }
 
     public ReservationResponse createWaitingReservation(final ReservationRequest request, final Long memberId) {
-        return createAndSaveReservationBy(ReservationCreate.forWaitingReservation(
+        return createAndSaveReservationBy(ReservationDeatils.forWaitingReservation(
                         memberId,
                         request.getThemeId(),
                         request.getDate(),
@@ -63,7 +63,7 @@ public class ReservationService {
 
     @Transactional
     public ReservationResponse createReservation(final AdminReservationRequest request) {
-        return createAndSaveReservationBy(ReservationCreate.forNormalReservation(
+        return createAndSaveReservationBy(ReservationDeatils.forNormalReservation(
                         request.getMemberId(),
                         request.getThemeId(),
                         request.getDate(),
@@ -126,21 +126,23 @@ public class ReservationService {
     }
 
     private ReservationResponse createAndSaveReservationBy(
-            ReservationCreate reservationCreate
+            ReservationDeatils details
     ) {
-        Member member = memberService.getMemberById(reservationCreate.getMemberId());
-        Theme theme = themeService.getThemeById(reservationCreate.getThemeId());
-        ReservationTime reservationTime = reservationTimeService.getReservationTimeById(
-                reservationCreate.getReservationTimeId());
-        reservationValidator.validateReservationDateTime(reservationCreate.getDate(), reservationTime);
+        Member member = memberService.getMemberById(details.getMemberId());
+        Theme theme = themeService.getThemeById(details.getThemeId());
+        ReservationTime reservationTime = reservationTimeService.getReservationTimeById(details.getReservationTimeId());
 
-        if (reservationCreate.isWaiting()) {
-            Reservation waiting = Reservation.createWaiting(member, theme, reservationCreate.getDate(),
-                    reservationTime);
-            return new ReservationResponse(reservationRepository.save(waiting));
-        }
-        Reservation reserved = Reservation.createReserved(member, theme, reservationCreate.getDate(), reservationTime);
-        return new ReservationResponse(reservationRepository.save(reserved));
+        reservationValidator.validateReservationDateTime(details.getDate(), reservationTime);
+
+        Reservation reservation = createReservationByType(
+                member,
+                theme,
+                details.getDate(),
+                reservationTime,
+                details.isWaiting()
+        );
+
+        return new ReservationResponse(reservationRepository.save(reservation));
     }
 
     private void acceptStatusByFirstWaiting(final Reservation reservation) {
@@ -150,5 +152,13 @@ public class ReservationService {
                 reservation.getTheme()
         );
         waitingReservation.acceptStatus();
+    }
+
+    private Reservation createReservationByType(Member member, Theme theme, LocalDate date,
+                                                ReservationTime reservationTime, boolean isWaiting) {
+        if (isWaiting) {
+            return Reservation.createWaiting(member, theme, date, reservationTime);
+        }
+        return Reservation.createReserved(member, theme, date, reservationTime);
     }
 }

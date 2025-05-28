@@ -2,7 +2,7 @@ package roomescape.reservation.domain;
 
 import java.time.LocalDate;
 
-public class ReservationCreate {
+public class ReservationDeatils {
 
     private final Long memberId;
     private final Long themeId;
@@ -10,8 +10,8 @@ public class ReservationCreate {
     private final Long reservationTimeId;
     private final boolean isWaiting;
 
-    private ReservationCreate(Long memberId, Long themeId, LocalDate date, Long reservationTimeId,
-                              boolean isWaiting) {
+    private ReservationDeatils(Long memberId, Long themeId, LocalDate date, Long reservationTimeId,
+                               boolean isWaiting) {
         this.memberId = memberId;
         this.themeId = themeId;
         this.date = date;
@@ -19,22 +19,22 @@ public class ReservationCreate {
         this.isWaiting = isWaiting;
     }
 
-    public static ReservationCreate forNormalReservation(
+    public static ReservationDeatils forNormalReservation(
             Long memberId,
             Long themeId,
             LocalDate date,
             Long timeId
     ) {
-        return new ReservationCreate(memberId, themeId, date, timeId, false);
+        return new ReservationDeatils(memberId, themeId, date, timeId, false);
     }
 
-    public static ReservationCreate forWaitingReservation(
+    public static ReservationDeatils forWaitingReservation(
             Long memberId,
             Long themeId,
             LocalDate date,
             Long timeId
     ) {
-        return new ReservationCreate(memberId, themeId, date, timeId, true);
+        return new ReservationDeatils(memberId, themeId, date, timeId, true);
     }
 
     public Long getMemberId() {
