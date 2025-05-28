@@ -13,11 +13,12 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.web.servlet.MockMvc;
 import roomescape.global.jwt.CookieAuthorizationExtractor;
+import roomescape.global.jwt.JwtProperties;
 import roomescape.global.jwt.JwtTokenProvider;
 import roomescape.member.domain.Role;
 
 @WebMvcTest(AdminController.class)
-@Import({JwtTokenProvider.class, CookieAuthorizationExtractor.class, TestCookieFixture.class})
+@Import({JwtTokenProvider.class, CookieAuthorizationExtractor.class, TestCookieFixture.class, JwtProperties.class})
 class AdminControllerTest {
 
     private static final String ADMIN_BASE_URL = "/admin";
