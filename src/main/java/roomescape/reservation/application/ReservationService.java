@@ -10,6 +10,7 @@ import roomescape.admin.reservation.presentation.dto.AdminWaitingReservationResp
 import roomescape.member.application.MemberService;
 import roomescape.member.domain.Member;
 import roomescape.reservation.domain.Reservation;
+import roomescape.reservation.domain.ReservationCreate;
 import roomescape.reservation.presentation.dto.ReservationRequest;
 import roomescape.reservation.presentation.dto.ReservationResponse;
 import roomescape.reservation.presentation.dto.UserReservationsResponse;
@@ -41,33 +42,33 @@ public class ReservationService {
 
     @Transactional
     public ReservationResponse createReservation(final ReservationRequest request, final Long memberId) {
-        return createAndSaveReservationBy(
-                memberId,
-                request.getThemeId(),
-                request.getDate(),
-                request.getTimeId(),
-                false
+        return createAndSaveReservationBy(ReservationCreate.forNormalReservation(
+                        memberId,
+                        request.getThemeId(),
+                        request.getDate(),
+                        request.getTimeId()
+                )
         );
     }
 
     public ReservationResponse createWaitingReservation(final ReservationRequest request, final Long memberId) {
-        return createAndSaveReservationBy(
-                memberId,
-                request.getThemeId(),
-                request.getDate(),
-                request.getTimeId(),
-                true
+        return createAndSaveReservationBy(ReservationCreate.forWaitingReservation(
+                        memberId,
+                        request.getThemeId(),
+                        request.getDate(),
+                        request.getTimeId()
+                )
         );
     }
 
     @Transactional
     public ReservationResponse createReservation(final AdminReservationRequest request) {
-        return createAndSaveReservationBy(
-                request.getMemberId(),
-                request.getThemeId(),
-                request.getDate(),
-                request.getTimeId(),
-                false
+        return createAndSaveReservationBy(ReservationCreate.forNormalReservation(
+                        request.getMemberId(),
+                        request.getThemeId(),
+                        request.getDate(),
+                        request.getTimeId()
+                )
         );
     }
 
@@ -125,22 +126,20 @@ public class ReservationService {
     }
 
     private ReservationResponse createAndSaveReservationBy(
-            final Long memberId,
-            final Long themeId,
-            final LocalDate date,
-            final Long reservationTimeId,
-            final boolean isWaiting
+            ReservationCreate reservationCreate
     ) {
-        Member member = memberService.getMemberById(memberId);
-        Theme theme = themeService.getThemeById(themeId);
-        ReservationTime reservationTime = reservationTimeService.getReservationTimeById(reservationTimeId);
-        reservationValidator.validateReservationDateTime(date, reservationTime);
+        Member member = memberService.getMemberById(reservationCreate.getMemberId());
+        Theme theme = themeService.getThemeById(reservationCreate.getThemeId());
+        ReservationTime reservationTime = reservationTimeService.getReservationTimeById(
+                reservationCreate.getReservationTimeId());
+        reservationValidator.validateReservationDateTime(reservationCreate.getDate(), reservationTime);
 
-        if (isWaiting) {
-            Reservation waiting = Reservation.createWaiting(member, theme, date, reservationTime);
+        if (reservationCreate.isWaiting()) {
+            Reservation waiting = Reservation.createWaiting(member, theme, reservationCreate.getDate(),
+                    reservationTime);
             return new ReservationResponse(reservationRepository.save(waiting));
         }
-        Reservation reserved = Reservation.createReserved(member, theme, date, reservationTime);
+        Reservation reserved = Reservation.createReserved(member, theme, reservationCreate.getDate(), reservationTime);
         return new ReservationResponse(reservationRepository.save(reserved));
     }
 
